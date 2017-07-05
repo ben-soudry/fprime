@@ -115,10 +115,17 @@ namespace Rpi {
               break;
           case Rpi::CONTEXT_RPI_DEMO_10Hz:
               // Toggle LED value
-              if ( (this->m_10HzTicks++%this->m_ledDivider == 0) and this->m_ledOn) {
-                  this->GpioWrite_out(2,(this->m_currLedVal == GPIO_OUT_SET)?true:false);
-                  this->m_currLedVal = (this->m_currLedVal == GPIO_OUT_SET)?GPIO_OUT_CLEAR:GPIO_OUT_SET;
+              if ( (this->m_10HzTicks++%this->m_ledDivider == 0)) {
+		  if(this->m_ledOn){
+                      this->GpioWrite_out(2,(this->m_currLedVal == GPIO_OUT_SET)?true:false);
+                      this->m_currLedVal = (this->m_currLedVal == GPIO_OUT_SET)?GPIO_OUT_CLEAR:GPIO_OUT_SET;
+		  }
+		  else{
+		      this->GpioWrite_out(2, false);
+		      this->m_currLedVal = GPIO_OUT_CLEAR;
+		  }
               }
+	      
               break;
           default:
               FW_ASSERT(0,context);
