@@ -123,7 +123,7 @@ namespace Rpi {
           const U32 cmdSeq, /*!< The command sequence number*/
           LedState value /*!< GPIO value*/
       );
-
+	
       //! Implementation for RD_SetLedDivider command handler
       //! Sets the divided rate of the LED
       void RD_SetLedDivider_cmdHandler(
@@ -132,7 +132,25 @@ namespace Rpi {
           U32 divider /*!< Divide 10Hz by this number*/
       );
 
+     //! Implementation for RD_MoveServo command handler
+      //! Moves Servo using I2C
+      void RD_MoveServo_cmdHandler(
+          const FwOpcodeType opCode, /*!< The opcode*/
+          const U32 cmdSeq, /*!< The command sequence number*/
+          U16 value /*!< Send this value to servo controller*/
+      );
 
+      //! Implementation for RD_MoveMotor command handler
+      //! Moves Motor using I2C
+      void RD_MoveMotor_cmdHandler(
+          const FwOpcodeType opCode, /*!< The opcode*/
+          const U32 cmdSeq, /*!< The command sequence number*/
+          U16 speed, /*!< Speed to send to servo controller to generate motor PWM*/
+          MotorDirection direction /*!< Direction to send to motor using GPIO*/
+      );
+
+
+ 
       // This will be called once when task starts up
       void preamble(void);
 

@@ -23,6 +23,45 @@
 #include <RPI/Top/RpiSchedContexts.hpp>
 #include <ctype.h>
 
+
+
+
+//Used to communicate with servo controller using I2C
+#include <stdint.h>
+#include <unistd.h>			//Needed for I2C port
+#include <fcntl.h>			//Needed for I2C port
+#include <sys/ioctl.h>			//Needed for I2C port
+#include <linux/i2c-dev.h>		//Needed for I2C port
+
+/*
+extern "C" {
+   #include <wiringPi.h>
+}*/
+
+//I2C registers for servo controller
+#define LED0_ON_L 0x06
+#define LED0_ON_H 0x07
+#define LED0_OFF_L 0x08
+#define LED0_OFF_H 0x09
+
+#define LED4_ON_L 0x16
+#define LED4_ON_H 0x17
+#define LED4_OFF_L 0x18
+#define LED4_OFF_H 0x19
+
+#define LED5_ON_L 0x1A
+#define LED5_ON_H 0x1B
+#define LED5_OFF_L 0x1C
+#define LED5_OFF_H 0x1D
+
+//Motor GPIO pins
+#define MOTOR0_A 11
+#define MOTOR0_B 12
+#define MOTOR1_A 13
+#define MOTOR1_B 14
+
+
+
 namespace Rpi {
 
   // ----------------------------------------------------------------------
@@ -292,6 +331,143 @@ namespace Rpi {
       this->m_ledDivider = divider;
       this->cmdResponse_out(opCode,cmdSeq,Fw::COMMAND_OK);
   }
+ 
+  void RpiDemoComponentImpl ::
+    RD_MoveServo_cmdHandler(
+        const FwOpcodeType opCode,
+        const U32 cmdSeq,
+        U16 value
+    )
+  {
+    int file_i2c;
+    //Open I2C Bus:
+    char *filename = (char*)"/dev/i2c-1";
+    if ((file_i2c = open(filename, O_RDWR)) < 0)
+    {
+	//Failed to open I2C bus
+	this->cmdResponse_out(opCode,cmdSeq,Fw::COMMAND_VALIDATION_ERROR);
+	return;
+    }
+	
+    int addr = 0x40; //<<<<<The I2C address of the slave
+    if (ioctl(file_i2c, I2C_SLAVE, addr) < 0)
+    {
+	//Failed to connect to I2C device
+	this->cmdResponse_out(opCode,cmdSeq,Fw::COMMAND_VALIDATION_ERROR);
+	return;
+    }
+	
+	
+    //OFF bytes
+    i2c_smbus_write_byte_data(file_i2c, LED0_OFF_L, value&0xFF);
+    i2c_smbus_write_byte_data(file_i2c, LED0_OFF_H, value>>8 );
+
+    //ON bytes
+    i2c_smbus_write_byte_data(file_i2c, LED0_ON_L, 0x00);
+    i2c_smbus_write_byte_data(file_i2c, LED0_ON_H, 0x00);
+  }
 
 
+  
+  void RpiDemoComponentImpl ::
+    RD_MoveMotor_cmdHandler(
+        const FwOpcodeType opCode,
+        const U32 cmdSeq,
+        U16 speed,
+        MotorDirection direction
+    )
+  {
+    
+    //Set Motor direction using GPIO to motor driver:
+    
+/*
+    wiringPiSetup();
+    pinMode(MOTOR0_A, OUTPUT);
+    pinMode(MOTOR0_B, OUTPUT);
+    pinMode(MOTOR1_A, OUTPUT);
+    pinMode(MOTOR1_B, OUTPUT);
+
+    if(direction == DIRECTION_FORWARD)
+    {
+      	digitalWrite(MOTOR0_A, HIGH);
+	digitalWrite(MOTOR0_B, LOW);
+	digitalWrite(MOTOR1_A, HIGH);
+	digitalWrite(MOTOR1_B, LOW);
+    }
+    else if(direction == DIRECTION_BACKWARD)
+    {
+	digitalWrite(MOTOR0_A, LOW);
+	digitalWrite(MOTOR0_B, HIGH);
+	digitalWrite(MOTOR1_A, LOW);
+	digitalWrite(MOTOR1_B, HIGH);
+        
+    }
+ */
+   
+    NATIVE_INT_TYPE motor0_A_port = 4;
+    NATIVE_INT_TYPE motor0_B_port = 5;	    
+    NATIVE_INT_TYPE motor1_A_port = 6;
+    NATIVE_INT_TYPE motor1_B_port = 7;
+
+    if(direction == DIRECTION_FORWARD)
+    {
+        this->GpioWrite_out(motor0_A_port, true);
+	this->GpioWrite_out(motor0_B_port, false);
+        this->GpioWrite_out(motor1_A_port, true);
+        this->GpioWrite_out(motor1_B_port, false);
+    }
+    else if(direction == DIRECTION_BACKWARD)
+    {
+	this->GpioWrite_out(motor0_A_port, false);
+	this->GpioWrite_out(motor0_B_port, true);
+        this->GpioWrite_out(motor1_A_port, false);
+        this->GpioWrite_out(motor1_B_port, true);
+
+    }
+    //this->cmdResponse_out(opCode,cmdSeq,Fw::COMMAND_OK);
+
+    //Set Motor speed using I2C to generate PWM from servo controller:
+
+    int file_i2c;
+    //Open I2C Bus:
+    char *filename = (char*)"/dev/i2c-1";
+    if ((file_i2c = open(filename, O_RDWR)) < 0)
+    {
+	//Failed to open I2C bus
+	this->cmdResponse_out(opCode,cmdSeq,Fw::COMMAND_VALIDATION_ERROR);
+        return;
+    }
+	
+    int addr = 0x40; //<<<<<The I2C address of the slave
+    if (ioctl(file_i2c, I2C_SLAVE, addr) < 0)
+    {
+	//Failed to connect to I2C device
+	this->cmdResponse_out(opCode,cmdSeq,Fw::COMMAND_VALIDATION_ERROR);
+	return;
+    }
+		
+
+    //Motor0 PWM:
+
+    //OFF bytes
+    i2c_smbus_write_byte_data(file_i2c, LED4_OFF_L, speed&0xFF);
+    i2c_smbus_write_byte_data(file_i2c, LED4_OFF_H, speed>>8 );
+
+    //ON bytes
+    i2c_smbus_write_byte_data(file_i2c, LED4_ON_L, 0x00);
+    i2c_smbus_write_byte_data(file_i2c, LED4_ON_H, 0x00);
+
+    //Motor1 PWM:
+     
+    //OFF bytes
+    i2c_smbus_write_byte_data(file_i2c, LED5_OFF_L, speed&0xFF);
+    i2c_smbus_write_byte_data(file_i2c, LED5_OFF_H, speed>>8 );
+
+    //ON bytes
+    i2c_smbus_write_byte_data(file_i2c, LED5_ON_L, 0x00);
+    i2c_smbus_write_byte_data(file_i2c, LED5_ON_H, 0x00);
+
+
+
+  }
 } // end namespace Rpi

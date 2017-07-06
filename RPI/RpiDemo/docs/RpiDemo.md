@@ -19,6 +19,11 @@
 | | | |input|GpioInNum|Input GPIO|                    
 |RD_SendSpi|5 (0x5)|Sends SPI data, prints read data| | |   
 | | | |data|Fw::CmdStringArg|data to send|                    
+|RD_MoveServo|6 (0x6)|Moves Servo using I2C| | |   
+| | | |value|U16|Send this value to servo controller|                    
+|RD_MoveMotor|7 (0x7)|Moves Motor using I2C| | |   
+| | | |speed|U16|Speed to send to servo controller to generate motor PWM|                    
+| | | |direction|MotorDirection|Direction to send to motor using GPIO|                    
 
 ## Telemetry Channel List
 

@@ -21,7 +21,7 @@
             Input Scheduler port - called at 1Hz and 10Hz
             </comment>
         </port>
-        <port name="GpioWrite" data_type="Drv::GpioWrite" kind="output"  max_number="3">
+        <port name="GpioWrite" data_type="Drv::GpioWrite" kind="output"  max_number="7">
             <comment>
             Output Port for writing GPIO values
             </comment>
@@ -134,6 +134,38 @@
                 </arg>          
              </args>
         </command>
+	<command kind="async" opcode="6" mnemonic="RD_MoveServo" >
+            <comment>
+            Moves Servo using I2C
+            </comment>
+            <args>
+            	<arg name="value" type="U16">
+                    <comment>Send this value to servo controller</comment>
+                </arg>          
+            </args>
+        </command>
+	
+	<command kind="async" opcode="7" mnemonic="RD_MoveMotor" >
+            <comment>
+            Moves Motor using I2C
+            </comment>
+            <args>
+            	<arg name="speed" type="U16">
+                    <comment>Speed to send to servo controller to generate motor PWM</comment>
+                </arg>
+		<arg name="direction" type="ENUM">
+                    <enum name="MotorDirection">
+                        <item name="DIRECTION_FORWARD"/>
+                        <item name="DIRECTION_BACKWARD"/>
+                    </enum>
+                    <comment>Direction to send to motor using GPIO</comment>
+                </arg>
+
+		          
+            </args>
+        </command>
+
+
     </commands>
     <telemetry>
         <channel id="0" name="RD_UartSentBytes" data_type="U32">
